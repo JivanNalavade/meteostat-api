@@ -1,0 +1,62 @@
+{
+	"variables": [],
+	"info": {
+		"name": "LazyFashion",
+		"_postman_id": "cd7d0068-a8cf-deb7-2932-7439d3ee7a46",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Customers",
+			"request": {
+				"url": "localhost:8081/api/customer",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Create Customer",
+			"request": {
+				"url": "localhost:8089/api/customer",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\r\n  \"name\": \"Akash Shewale\",\r\n  \"email\": \"akashshewale.hello@gmail.com\",\r\n  \"address\": \"Pune\",\r\n  \"phone\": \"9145605582\"\r\n}]"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Update Customer",
+			"request": {
+				"url": "localhost:8081/api/customer/a012v00002aAAnqAAG",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"Akash Shewale\",\r\n  \"email\": \"akashshewale.hello@gmail.com\",\r\n  \"address\": \"AhmedNagar\",\r\n  \"phone\": \"9145605582\"\r\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
