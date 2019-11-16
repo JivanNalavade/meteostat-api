@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="41983eab-1ad8-419f-bfc3-848000ac8f1e" >
+		<http:request-connection protocol="HTTPS" host="api.meteostat.net" />
+	</http:request-config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="348af724-a464-4fe7-8ade-ee7d4a4b6f42" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="metostat-apiFlow" doc:id="c5499c05-bee6-40f5-8972-c571d0ba2169" >
+		<http:listener doc:name="Listener" doc:id="52d26b8d-d3ef-4109-a33b-5147a84e7ee9" path="/getWhether" config-ref="HTTP_Listener_config"/>
+		<set-variable value='#[attributes.queryParams.month default "01" as String]' doc:name="month" doc:id="c8ee5e7e-8f1a-474b-b6cd-0ffbf5edfe13" variableName="month" />
+		<http:request method="GET" doc:name="Request" doc:id="c6f3ba60-dd5b-400f-9c27-027cef58b838" config-ref="HTTP_Request_configuration" path="/v1/history/daily?station=10637&amp;start=2017-01-01&amp;end=2017-12-31&amp;key=lR0cZrnk"/>
+		<logger level="INFO" doc:name="Logger" doc:id="8a18aa30-773e-44a9-a49c-bb204cd780d4" message="#[vars.month]"/>
+		<ee:transform doc:name="Transform Message" doc:id="2c619f26-b627-454d-b464-087b063b6287" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+fun getMonth(dateStr: String) = 
+    dateStr[5 to 6]
+---
+using(ManthData = payload.data filter ((item, index) -> getMonth(item.date) ~= vars.month))
+max(ManthData.temperature)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="f530bb09-b070-4d24-aa2b-1676761340f9" />
+	</flow>
+	<flow name="metostat-apiFlow1" doc:id="04bc78bb-5f40-4600-a4c8-aa9e3d355293" >
+		<http:listener doc:name="Listener" doc:id="6f6d6f5c-e60b-4dbe-9f7b-aa5773f05eea" config-ref="HTTP_Listener_config" path="/getAvgPrecipitation"/>
+		<http:request method="GET" doc:name="Request" doc:id="5c1de3bd-cea9-42bf-9bbc-609d82844e68" config-ref="HTTP_Request_configuration" path="/v1/history/daily?station=10637&amp;start=2017-01-01&amp;end=2017-12-31&amp;key=lR0cZrnk"/>
+		<ee:transform doc:name="Transform Message" doc:id="8d1e7c3e-b715-4554-959a-10fd5024ccd5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0 
+import * from dw::core::Arrays
+output application/json skipNullOn="everywhere"
+fun getMonth(date: String) =
+    date[5 to 6]
+fun getPreceData(data) = 
+    filter(data, (item, index) -> item.precipitation != null)
+---
+using(data = payload.data groupBy ((item, index) -> getMonth(item.date)))
+{
+    Jan: sum(getPreceData(data."01").precipitation) / sizeOf(data."01"),
+    Feb : sum(getPreceData(data."02").precipitation) / sizeOf(data."02"),
+    Mar : sum(getPreceData(data."03").precipitation)/ sizeOf(data."03"),
+    Apr : sum(getPreceData(data."04").precipitation) / sizeOf(data."04"),
+    May : sum(getPreceData(data."05").precipitation) / sizeOf(data."05"),
+    June : sum(getPreceData(data."06").precipitation)/ sizeOf(data."06"),
+    Jul : sum(getPreceData(data."07").precipitation) / sizeOf(data."07"),
+    Aug : sum(getPreceData(data."08").precipitation) / sizeOf(data."08"),
+    sept : sum(getPreceData(data."09").precipitation) / sizeOf(data."09"),
+    Oct : sum(getPreceData(data."10").precipitation) / sizeOf(data."10"),
+    Nov : sum(getPreceData(data."11").precipitation) / sizeOf(data."11"),
+    Dec : sum(getPreceData(data."12").precipitation) / sizeOf(data."12")
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="metostat-apiFlow2" doc:id="17d4eb83-0843-423b-bf0a-7a1f9814041c" >
+		<http:listener doc:name="Listener" doc:id="65d0469d-4c6d-44cb-88e8-d63188b54acd" config-ref="HTTP_Listener_config" path="/getWeeklyTemp"/>
+		<http:request method="GET" doc:name="Request" doc:id="d11e2182-5689-45a0-9e58-4e5ded9dee57" config-ref="HTTP_Request_configuration" path="/v1/history/daily?station=10637&amp;start=2017-01-01&amp;end=2017-12-31&amp;key=lR0cZrnk"/>
+		<ee:transform doc:name="Transform Message" doc:id="865f0e84-478e-4615-a518-251d60e1c100" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Arrays
+output application/json
+---
+payload.data divideBy 7 map ((item, index) -> {
+    "$index": min(item.temperature)
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
